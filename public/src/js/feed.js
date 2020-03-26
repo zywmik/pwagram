@@ -20,6 +20,16 @@ function openCreatePostModal() {
 
     deferredPrompt = null;
   }
+
+  //* HOW TO UNREGISTER SERVICE WORKER ON DEMAND
+  // if ('serviceWorker' in navigator) {
+  //   navigator.serviceWorker.getRegistrations()
+  //     .then(registrations => {
+  //       for (registration of registrations) {
+  //         registration.unregister();
+  //       }
+  //     })
+  // }
 }
 
 function closeCreatePostModal() {
@@ -42,6 +52,13 @@ const onSaveButtonClicked = (event) => {
 shareImageButton.addEventListener('click', openCreatePostModal);
 
 closeCreatePostModalButton.addEventListener('click', closeCreatePostModal);
+
+const clearCards = () => {
+  while(sharedMomentsArea.hasChildNodes()) {
+    sharedMomentsArea.removeChild(sharedMomentsArea.lastChild);
+  }
+}
+
 
 function createCard() {
   var cardWrapper = document.createElement('div');
@@ -71,11 +88,41 @@ function createCard() {
   sharedMomentsArea.appendChild(cardWrapper);
 }
 
-fetch('https://httpbin.org/get')
-  .then(function(res) {
+const url = 'https://httpbin.org/post';
+let networkDataReceived = false;
+
+fetch(url, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  },
+  body: JSON.stringify({
+    message: 'Some message'
+  })
+})
+  .then(function (res) {
     return res.json();
   })
-  .then(function(data) {
+  .then(function (data) {
+    console.log('From web: ', data);
+    networkDataReceived = true;
+    clearCards();
     createCard();
   });
 
+if ('caches' in window) {
+  caches.match(url)
+    .then(response => {
+      if (response) {
+        return response.json();
+      }
+    })
+    .then(data => {
+      console.log('From cache: ', data);
+      if (!networkDataReceived) {
+        clearCards();
+        createCard();
+      }
+    })
+}
