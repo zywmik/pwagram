@@ -132,7 +132,7 @@ self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background syncing', event);
   if (event.tag === 'sync-new-posts') {
     console.log('[Service Worker] Syncing new Posts')
-    event.waitUntil(
+    event.waitUntil( 
       readAllData('sync-posts')
         .then(data => {
           for (const dt of data) {
@@ -150,7 +150,7 @@ self.addEventListener('sync', (event) => {
               })
             })
               .then(res => {
-                console.log('Sent data', res);
+                console.log('Sent data', res); 
                 if (res.ok) {
                   deleteItemFromData('sync-posts', dt.id);
                 }
