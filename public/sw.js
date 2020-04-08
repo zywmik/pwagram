@@ -1,4 +1,7 @@
-const CACHE_STATIC_NAME = 'static-v17';
+importScripts('/src/js/idb.js');
+importScripts('/src/js/utility.js');
+
+const CACHE_STATIC_NAME = 'static-v26';
 const CACHE_DYNAMIC_NAME = 'dynamic-v4';
 const STATIC_FILES = [
   '/',
@@ -6,6 +9,7 @@ const STATIC_FILES = [
   '/offline.html',
   '/src/js/app.js',
   '/src/js/feed.js',
+  '/src/js/idb.js',
   '/src/js/promise.js',
   '/src/js/fetch.js',
   '/src/js/material.min.js',
@@ -18,7 +22,7 @@ const STATIC_FILES = [
 ];
 
 // const CACHE_SIZE = 6
-//* EXAMPLE HOW YOU CAN TRIME THE CACHE
+//* EXAMPLE HOW YOU CAN TRIM THE CACHE
 // const trimCache = (cacheName, maxItems) => {
 //   caches.open(cacheName)
 //     .then((cache) => {
@@ -71,21 +75,25 @@ const isInArray = (string, array) => {
 }
 
 
-//* CACHE THEN NETWORK mixed with CACHE ONLY and CACHE WITH NETWORK FALLBACK
 self.addEventListener('fetch', event => {
-  const url = 'https://httpbin.org/get';
+  const url = 'https://pwagram-30612.firebaseio.com/posts';
 
   if (event.request.url.indexOf(url) > -1) {
-    event.respondWith(
-      caches.open(CACHE_DYNAMIC_NAME)
-        .then((cache) => {
-          return fetch(event.request)
-            .then((res) => {
-              cache.put(event.request, res.clone());
-              // trimCache(CACHE_DYNAMIC_NAME, CACHE_SIZE);
-              return res;
-            });
-        })
+    event.respondWith(fetch(event.request)
+      .then(res => {
+        const clonedRes = res.clone();
+        clearAllData('posts')
+          .then(() => {
+            clonedRes.json()
+          })
+          .then(data => {
+            for (const key in data) {
+              writeData('posts', data[key]);
+            }
+          });
+
+        return res;
+      })
     );
   } else if (isInArray(event.request.url, STATIC_FILES)) {
     event.respondWith(caches.match(event.request));
@@ -99,8 +107,8 @@ self.addEventListener('fetch', event => {
               .then(res => {
                 return caches.open(CACHE_DYNAMIC_NAME)
                   .then(cache => {
-                    cache.put(event.request.url, res.clone());
                     // trimCache(CACHE_DYNAMIC_NAME, CACHE_SIZE);
+                    cache.put(event.request.url, res.clone());
                     return res;
                   })
               })
@@ -120,61 +128,38 @@ self.addEventListener('fetch', event => {
   }
 });
 
-
-//* OTHER CACHE STATEGIES
-//* CACHE WITH NETWORK FALLBACK
-// self.addEventListener('fetch', event => {
-//   event.respondWith(
-    // caches.match(event.request)
-    //   .then(response => {
-    //     if (response) return response;
-    //     else {
-    //       return fetch(event.request)
-    //         .then(res => {
-    //           return caches.open(CACHE_DYNAMIC_NAME)
-    //             .then(cache => {
-    //               cache.put(event.request.url, res.clone());
-    //               return res;
-    //             })
-    //         })
-    //         .catch(err => {
-    //           return caches.open(CACHE_STATIC_NAME)
-    //             .then((cache) => {
-    //               return cache.match('/offline.html');
-    //             })
-    //         });
-    //     }
-    //   })
-//   );
-// });
-
-//* NETWORK FIRST WITH DYNAMIC CACHING
-// self.addEventListener('fetch', event => {
-//   event.respondWith(
-//     fetch(event.request)
-//       .then(res => {
-//         return caches.open(CACHE_DYNAMIC_NAME)
-//           .then((cache) => {
-//             cache.put(event.request.url, res.clone());
-//             return res;
-//           })
-//       })
-//       .catch(err => {
-//         return caches.match(event.request);
-//       })
-//   );
-// });
-
-//* CACHE-ONLY STRATEGY
-// self.addEventListener('fetch', event => {
-//   event.respondWith(
-//     caches.match(event.request)
-//   );
-// });
-
-//* NETWORK-ONLY -- if you want it, don't use service workers at all 🤨
-// self.addEventListener('fetch', event => {
-//   event.respondWith(
-//     fetch(event.request)
-//   );
-// });
+self.addEventListener('sync', (event) => {
+  console.log('[Service Worker] Background syncing', event);
+  if (event.tag === 'sync-new-posts') {
+    console.log('[Service Worker] Syncing new Posts')
+    event.waitUntil(
+      readAllData('sync-posts')
+        .then(data => {
+          for (const dt of data) {
+            fetch('https://pwagram-30612.firebaseio.com/posts.json', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                id: dt.id,
+                title: dt.title,
+                location: dt.location,
+                image: 'https://firebasestorage.googleapis.com/v0/b/pwagram-30612.appspot.com/o/sf-boat.jpg?alt=media&token=ff9f3c98-df9c-4a35-952f-a59ae79c9cac'
+              })
+            })
+              .then(res => {
+                console.log('Sent data', res);
+                if (res.ok) {
+                  deleteItemFromData('sync-posts', dt.id);
+                }
+              })
+              .catch((err) => {
+                console.log('Error while sending data', err);
+              });
+          }
+        })
+    );
+  }
+});
