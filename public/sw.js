@@ -1,7 +1,7 @@
 importScripts('/src/js/idb.js');
 importScripts('/src/js/utility.js');
 
-const CACHE_STATIC_NAME = 'static-v26';
+const CACHE_STATIC_NAME = 'static-v27';
 const CACHE_DYNAMIC_NAME = 'dynamic-v4';
 const STATIC_FILES = [
   '/',
@@ -132,11 +132,11 @@ self.addEventListener('sync', (event) => {
   console.log('[Service Worker] Background syncing', event);
   if (event.tag === 'sync-new-posts') {
     console.log('[Service Worker] Syncing new Posts')
-    event.waitUntil( 
+    event.waitUntil(
       readAllData('sync-posts')
         .then(data => {
           for (const dt of data) {
-            fetch('https://pwagram-30612.firebaseio.com/posts.json', {
+            fetch('https://us-central1-pwagram-30612.cloudfunctions.net/storePostData', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -150,9 +150,12 @@ self.addEventListener('sync', (event) => {
               })
             })
               .then(res => {
-                console.log('Sent data', res); 
+                console.log('Sent data', res);
                 if (res.ok) {
-                  deleteItemFromData('sync-posts', dt.id);
+                  res.json()
+                    .then(resData => {
+                      deleteItemFromData('sync-posts', resData.id);
+                    })
                 }
               })
               .catch((err) => {
