@@ -1,3 +1,7 @@
+import dotenv from '.dotenv';
+
+dotenv.config();
+
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
@@ -34,12 +38,16 @@ locationBtn.addEventListener('click', (event) => {
       lng: position.coords.longitude
     }
 
-    const geocodedLocation = fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${fetchedLocation.lat},${fetchedLocation.lng}&key=${GKEY}`)
-      .then(resp => resp.json())
-      .then(data => {
-        locationInput.value = data.results[4].formatted_address || "";
-      })
-      .catch(err => console.error(err));
+    if (process.env.GKEY) {
+      const geocodedLocation = fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${fetchedLocation.lat},${fetchedLocation.lng}&key=${process.env.GKEY}`)
+        .then(resp => resp.json())
+        .then(data => {
+          locationInput.value = data.results[4].formatted_address || "";
+        })
+        .catch(err => console.error(err));
+    } else {
+      locationInput.value = "Please, insert location manually...";
+    }
 
     document.querySelector('#manual-location').classList.add('is-focused');
   }, (err) => {
