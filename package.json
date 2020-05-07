@@ -8,7 +8,8 @@
     "minify": "uglifyjs public/src/build/js/app.js -o public/src/build/js/app.min.js --compress --mangle && uglifyjs public/src/build/js/feed.js -o public/src/build/js/feed.min.js --compress --mangle && uglifyjs public/src/build/js/fetch.js -o public/src/build/js/fetch.min.js --compress --mangle && uglifyjs public/src/build/js/idb.js -o public/src/build/js/idb.min.js --compress --mangle && uglifyjs public/src/build/js/promise.js -o public/src/build/js/promise.min.js --compress --mangle && uglifyjs public/src/build/js/utility.js -o public/src/build/js/utility.min.js --compress --mangle",
     "generate-sw": "workbox inject:manifest",
     "compile": "babel public/src/js -d public/src/build/js/",
-    "build": "npm run compile && npm run minify && npm run generate-sw"
+    "build": "npm run compile && npm run minify && npm run generate-sw",
+    "deploy": "firebase deploy"
   },
   "keywords": [
     "pwa",

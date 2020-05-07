@@ -1,7 +1,3 @@
-import dotenv from '.dotenv';
-
-dotenv.config();
-
 var shareImageButton = document.querySelector('#share-image-button');
 var createPostArea = document.querySelector('#create-post');
 var closeCreatePostModalButton = document.querySelector('#close-create-post-modal-btn');
@@ -38,6 +34,7 @@ locationBtn.addEventListener('click', (event) => {
       lng: position.coords.longitude
     }
 
+    // NOTE set GKEY='your key' env variable to make it work
     if (process.env.GKEY) {
       const geocodedLocation = fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${fetchedLocation.lat},${fetchedLocation.lng}&key=${process.env.GKEY}`)
         .then(resp => resp.json())
